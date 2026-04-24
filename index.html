@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MC Dashboard</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .online { background: #22c55e; }
+    .offline { background: #3b82f6; }
+    .disabled { background: #64748b; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<h1>🖥️ Server Dashboard</h1>
+
+<div class="card">
+  <h3>📊 Resources</h3>
+  <p id="cpu">CPU: ...</p>
+  <p id="ram">RAM: ...</p>
+</div>
+
+<div class="card">
+  <h3>🔌 Status</h3>
+  <p id="status">Loading...</p>
+</div>
+
+<div class="card">
+  <h3>🔗 Connections</h3>
+  <p>Java: <span id="java">...</span></p>
+  <p>Bedrock: <span id="geyser">...</span></p>
+</div>
+
+<div class="card">
+  <h3>👥 Players</h3>
+  <ul id="players"></ul>
+</div>
+
+<div class="card">
+  <h3>🗺️ Map</h3>
+  <a id="map" target="_blank">Loading...</a>
+</div>
+
+<button id="startBtn" onclick="startServer()">Start Server</button>
+
+<script>
+const API = "http://localhost:3000/api";
+
+async function fetchStatus() {
+  const res = await fetch(API + "/status");
+  const data = await res.json();
+
+  // stats
+  document.getElementById("cpu").textContent =
+    "CPU: " + (data.currentData?.stats?.cpu || "0%");
+  document.getElementById("ram").textContent =
+    "RAM: " + (data.currentData?.stats?.memory?.percent || "0%");
+
+  // status
+  let statusText = "🔴 OFFLINE";
+  if (data.isRetrying) statusText = "⏳ STARTING...";
+  else if (data.isOnline) statusText = "🟢 ONLINE";
+
+  document.getElementById("status").textContent = statusText;
+
+  // IPs
+  document.getElementById("java").textContent =
+    data.ips.javaIp || "Not ready";
+  document.getElementById("geyser").textContent =
+    data.ips.geyserIp || "Not ready";
+
+  // players
+  const list = document.getElementById("players");
+  list.innerHTML = "";
+
+  if (!data.players || data.players.length === 0) {
+    list.innerHTML = "<li>No players online</li>";
+  } else {
+    data.players.forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = "👤 " + p;
+      list.appendChild(li);
+    });
+  }
+
+  // map
+  const map = document.getElementById("map");
+  if (data.mapUrl) {
+    map.textContent = "🌍 Open Map";
+    map.href = data.mapUrl;
+  } else {
+    map.textContent = "Not available";
+    map.href = "#";
+  }
+
+  // button
+  const btn = document.getElementById("startBtn");
+
+  if (data.isOnline) {
+    btn.textContent = "Server Online";
+    btn.className = "online";
+    btn.disabled = true;
+  } else if (data.isRetrying) {
+    btn.textContent = "Booting...";
+    btn.className = "disabled";
+    btn.disabled = true;
+  } else {
+    btn.textContent = "Start Server";
+    btn.className = "offline";
+    btn.disabled = false;
+  }
+}
+
+async function startServer() {
+  await fetch(API + "/start", { method: "POST" });
+  fetchStatus();
+}
+
+// auto refresh like Discord bot
+setInterval(fetchStatus, 5000);
+fetchStatus();
+</script>
+
+</body>
+</html>
