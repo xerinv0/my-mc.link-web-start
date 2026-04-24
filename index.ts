@@ -1,9 +1,6 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import MyMCLib from "mymc-lib";
-
-dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -100,6 +97,10 @@ app.post("/api/start", async (_, res) => {
     res.status(500).json({ error: "Failed to start server" });
   }
 });
+
+app.get("/", (req, res) => {
+  res.sendFile(path.resolve("./index.html"));
+})
 
 app.listen(3000, () => {
   console.log("🚀 API running on http://localhost:3000");
