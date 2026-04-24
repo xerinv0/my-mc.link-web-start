@@ -1,0 +1,1 @@
+# my-mc.link-web-start
