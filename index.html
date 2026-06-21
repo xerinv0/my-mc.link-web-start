@@ -64,7 +64,7 @@
 <button id="startBtn" onclick="startServer()">Start Server</button>
 
 <script>
-const API = "http://localhost:3000/api";
+const API = `${window.location.href}api`;
 
 async function fetchStatus() {
   const res = await fetch(API + "/status");
