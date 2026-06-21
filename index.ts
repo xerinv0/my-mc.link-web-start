@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import MyMCLib from "mymc-lib";
+import path from "node:path"
 
 const app = express();
 app.use(cors());
@@ -48,7 +49,7 @@ app.get("/api/status", async (_, res) => {
     // fetch map once
     if (!serverState.mapUrl) {
       try {
-        serverState.mapUrl = await mc.getServersMapUrl();
+        serverState.mapUrl = await mc.getMapURL();
       } catch {
         serverState.mapUrl = null;
       }
@@ -82,7 +83,7 @@ app.post("/api/start", async (_, res) => {
       if (!serverState.ips.geyserIp) {
         try {
           serverState.ips.geyserIp =
-            await mc.createGeyserConnectionUrl();
+            await mc.createMyGeyserLink();
         } catch {}
       }
 
