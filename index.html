@@ -1,145 +1,314 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>MC Dashboard</title>
-  <style>
-    body {
-      background: #0f172a;
-      color: white;
-      font-family: Arial;
-      padding: 20px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
+<title>MC Dashboard</title>
 
-    button {
-      padding: 10px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
+<style>
+:root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --primary: #3b82f6;
+}
 
-    .online { background: #22c55e; }
-    .offline { background: #3b82f6; }
-    .disabled { background: #64748b; cursor: not-allowed; }
-  </style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, Arial, sans-serif;
+    padding: 20px;
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.grid {
+    display: grid;
+    gap: 15px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+}
+
+p {
+    margin: 6px 0;
+}
+
+ul {
+    list-style: none;
+}
+
+li {
+    padding: 6px 0;
+}
+
+a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.online {
+    background: var(--success);
+    color: white;
+}
+
+.offline {
+    background: var(--primary);
+    color: white;
+}
+
+.disabled {
+    background: #475569;
+    color: white;
+    cursor: not-allowed;
+}
+
+.status-online {
+    color: var(--success);
+}
+
+.status-offline {
+    color: #ef4444;
+}
+
+.status-starting {
+    color: var(--warning);
+}
+
+.small {
+    color: var(--muted);
+    font-size: 13px;
+}
+</style>
 </head>
 <body>
 
-<h1>🖥️ Server Dashboard</h1>
+<h1>🖥️ Minecraft Dashboard</h1>
 
-<div class="card">
-  <h3>📊 Resources</h3>
-  <p id="cpu">CPU: ...</p>
-  <p id="ram">RAM: ...</p>
+<div class="grid">
+
+    <div class="card">
+        <h3>📊 Resources</h3>
+        <p id="cpu">CPU: Loading...</p>
+        <p id="ram">RAM: Loading...</p>
+    </div>
+
+    <div class="card">
+        <h3>🔌 Status</h3>
+        <p id="status">Loading...</p>
+    </div>
+
+    <div class="card">
+        <h3>🔗 Connections</h3>
+        <p>Java: <span id="java">Loading...</span></p>
+        <p>Bedrock: <span id="geyser">Loading...</span></p>
+    </div>
+
+    <div class="card">
+        <h3>👥 Players</h3>
+        <ul id="players">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>🗺️ Live Map</h3>
+        <div id="mapContainer">
+            Loading...
+        </div>
+    </div>
+
 </div>
 
-<div class="card">
-  <h3>🔌 Status</h3>
-  <p id="status">Loading...</p>
-</div>
-
-<div class="card">
-  <h3>🔗 Connections</h3>
-  <p>Java: <span id="java">...</span></p>
-  <p>Bedrock: <span id="geyser">...</span></p>
-</div>
-
-<div class="card">
-  <h3>👥 Players</h3>
-  <ul id="players"></ul>
-</div>
-
-<div class="card">
-  <h3>🗺️ Map</h3>
-  <a id="map" target="_blank">Loading...</a>
-</div>
-
-<button id="startBtn" onclick="startServer()">Start Server</button>
+<button id="startBtn" class="offline">
+    Start Server
+</button>
 
 <script>
-const API = `${window.location.href}api`;
+const API = "/api";
+
+const elements = {
+    cpu: document.getElementById("cpu"),
+    ram: document.getElementById("ram"),
+    status: document.getElementById("status"),
+    java: document.getElementById("java"),
+    geyser: document.getElementById("geyser"),
+    players: document.getElementById("players"),
+    mapContainer: document.getElementById("mapContainer"),
+    startBtn: document.getElementById("startBtn")
+};
 
 async function fetchStatus() {
-  const res = await fetch(API + "/status");
-  const data = await res.json();
+    try {
+        const response = await fetch(`${API}/status`);
 
-  // stats
-  document.getElementById("cpu").textContent =
-    "CPU: " + (data.currentData?.stats?.cpu || "0%");
-  document.getElementById("ram").textContent =
-    "RAM: " + (data.currentData?.stats?.memory?.percent || "0%");
+        if (!response.ok) {
+            throw new Error("API error");
+        }
 
-  // status
-  let statusText = "🔴 OFFLINE";
-  if (data.isRetrying) statusText = "⏳ STARTING...";
-  else if (data.isOnline) statusText = "🟢 ONLINE";
+        const data = await response.json();
 
-  document.getElementById("status").textContent = statusText;
+        elements.cpu.textContent =
+            `CPU: ${data.currentData?.stats?.cpu ?? "0%"}`;
 
-  // IPs
-  document.getElementById("java").textContent =
-    data.ips.javaIp || "Not ready";
-  document.getElementById("geyser").textContent =
-    data.ips.geyserIp || "Not ready";
+        elements.ram.textContent =
+            `RAM: ${data.currentData?.stats?.memory?.percent ?? "0%"}`;
 
-  // players
-  const list = document.getElementById("players");
-  list.innerHTML = "";
+        if (data.isRetrying) {
+            elements.status.innerHTML =
+                '<span class="status-starting">⏳ STARTING...</span>';
+        } else if (data.isOnline) {
+            elements.status.innerHTML =
+                '<span class="status-online">🟢 ONLINE</span>';
+        } else {
+            elements.status.innerHTML =
+                '<span class="status-offline">🔴 OFFLINE</span>';
+        }
 
-  if (!data.players || data.players.length === 0) {
-    list.innerHTML = "<li>No players online</li>";
-  } else {
-    data.players.forEach(p => {
-      const li = document.createElement("li");
-      li.textContent = "👤 " + p;
-      list.appendChild(li);
-    });
-  }
+        elements.java.textContent =
+            data.ips?.javaIp || "Not available";
 
-  // map
-  const map = document.getElementById("map");
-  if (data.mapUrl) {
-    map.textContent = "🌍 Open Map";
-    map.href = data.mapUrl;
-  } else {
-    map.textContent = "Not available";
-    map.href = "#";
-  }
+        elements.geyser.textContent =
+            data.ips?.geyserIp || "Not available";
 
-  // button
-  const btn = document.getElementById("startBtn");
+        elements.players.innerHTML = "";
 
-  if (data.isOnline) {
-    btn.textContent = "Server Online";
-    btn.className = "online";
-    btn.disabled = true;
-  } else if (data.isRetrying) {
-    btn.textContent = "Booting...";
-    btn.className = "disabled";
-    btn.disabled = true;
-  } else {
-    btn.textContent = "Start Server";
-    btn.className = "offline";
-    btn.disabled = false;
-  }
+        if (
+            !Array.isArray(data.players) ||
+            data.players.length === 0
+        ) {
+            const li = document.createElement("li");
+            li.textContent = "No players online";
+            elements.players.appendChild(li);
+        } else {
+            for (const player of data.players) {
+                const li = document.createElement("li");
+                li.textContent = `👤 ${player}`;
+                elements.players.appendChild(li);
+            }
+        }
+
+        elements.mapContainer.innerHTML = "";
+
+        if (
+            data.mapUrl &&
+            typeof data.mapUrl === "string" &&
+            data.mapUrl.startsWith("http") &&
+            !data.mapUrl.includes("<!DOCTYPE")
+        ) {
+            const link = document.createElement("a");
+            link.href = data.mapUrl;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = "🌍 Open Live Map";
+
+            elements.mapContainer.appendChild(link);
+        } else {
+            elements.mapContainer.textContent =
+                "Map unavailable";
+        }
+
+        if (data.isOnline) {
+            elements.startBtn.textContent =
+                "Server Online";
+            elements.startBtn.className =
+                "online";
+            elements.startBtn.disabled = true;
+        } else if (data.isRetrying) {
+            elements.startBtn.textContent =
+                "Booting...";
+            elements.startBtn.className =
+                "disabled";
+            elements.startBtn.disabled = true;
+        } else {
+            elements.startBtn.textContent =
+                "Start Server";
+            elements.startBtn.className =
+                "offline";
+            elements.startBtn.disabled = false;
+        }
+
+    } catch (err) {
+        elements.status.innerHTML =
+            '<span class="status-offline">🔴 API Offline</span>';
+    }
 }
 
 async function startServer() {
-  await fetch(API + "/start", { method: "POST" });
-  fetchStatus();
+    try {
+        elements.startBtn.disabled = true;
+        elements.startBtn.textContent = "Starting...";
+
+        await fetch(`${API}/start`, {
+            method: "POST"
+        });
+
+        fetchStatus();
+
+        const interval = setInterval(async () => {
+            await fetchStatus();
+
+            if (
+                elements.status.textContent.includes("ONLINE")
+            ) {
+                clearInterval(interval);
+            }
+        }, 1000);
+
+    } catch {
+        alert("Failed to start server.");
+    }
 }
 
-// auto refresh like Discord bot
-setInterval(fetchStatus, 5000);
+elements.startBtn.addEventListener(
+    "click",
+    startServer
+);
+
 fetchStatus();
+setInterval(fetchStatus, 5000);
 </script>
 
 </body>
 </html>
+```
