@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -204,12 +204,13 @@ async function fetchStatus() {
             elements.status.innerHTML =
                 '<span class="status-offline">🔴 OFFLINE</span>';
         }
+elements.java.textContent = data.ips?.javaIp
+    ? `${data.ips.javaIp.hostname}:${data.ips.javaIp.port}`
+    : "Not available";
 
-        elements.java.textContent =
-            data.ips?.javaIp || "Not available";
-
-        elements.geyser.textContent =
-            data.ips?.geyserIp || "Not available";
+elements.geyser.textContent = data.ips?.geyserIp
+    ? `${data.ips.geyserIp.hostname}:${data.ips.geyserIp.port}`
+    : "Not available";
 
         elements.players.innerHTML = "";
 
@@ -311,4 +312,3 @@ setInterval(fetchStatus, 5000);
 
 </body>
 </html>
-```
