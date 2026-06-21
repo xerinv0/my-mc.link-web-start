@@ -233,12 +233,12 @@ elements.geyser.textContent = data.ips?.geyserIp
 
         if (
             data.mapUrl &&
-            typeof data.mapUrl === "string" &&
-            data.mapUrl.startsWith("http") &&
+            typeof data.mapUrl.message === "string" &&
+            data.mapUrl.message.startsWith("http") &&
             !data.mapUrl.includes("<!DOCTYPE")
         ) {
             const link = document.createElement("a");
-            link.href = data.mapUrl;
+            link.href = data.mapUrl.messsage;
             link.target = "_blank";
             link.rel = "noopener noreferrer";
             link.textContent = "🌍 Open Live Map";
